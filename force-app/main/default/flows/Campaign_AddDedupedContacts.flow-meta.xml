@@ -103,6 +103,9 @@
         <label>Check Reports Quantity</label>
         <locationX>334</locationX>
         <locationY>458</locationY>
+        <defaultConnector>
+            <targetReference>Reports_Not_Found_Screen</targetReference>
+        </defaultConnector>
         <defaultConnectorLabel>Reports Not Found</defaultConnectorLabel>
         <rules>
             <name>Got_Multiple_Reports</name>
@@ -326,6 +329,22 @@
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <storeOutputAutomatically>true</storeOutputAutomatically>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Reports_Not_Found_Screen</name>
+        <label>Reports Not Found Screen</label>
+        <locationX>618</locationX>
+        <locationY>566</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>Reports_Not_Found_Screen_Message</name>
+            <fieldText>&lt;p&gt;Hmm... something went wrong.&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;No reports were found with the name {!Input_ReportName}. Please confirm the report name and access to the report.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
