@@ -8,7 +8,7 @@
         <actionName>FlowReportToCampaignService</actionName>
         <actionType>apex</actionType>
         <connector>
-            <targetReference>Thank_You_Screen</targetReference>
+            <targetReference>Set_Campaign_Member_Count</targetReference>
         </connector>
         <flowTransactionModel>Automatic</flowTransactionModel>
         <inputParameters>
@@ -24,9 +24,29 @@
             </value>
         </inputParameters>
         <nameSegment>FlowReportToCampaignService</nameSegment>
+        <outputParameters>
+            <assignToReference>campaignMembersCreated</assignToReference>
+            <name>campaignMembers</name>
+        </outputParameters>
         <versionSegment>1</versionSegment>
     </actionCalls>
     <apiVersion>61.0</apiVersion>
+    <assignments>
+        <name>Set_Campaign_Member_Count</name>
+        <label>Set Campaign Member Count</label>
+        <locationX>176</locationX>
+        <locationY>350</locationY>
+        <assignmentItems>
+            <assignToReference>numCampaignMembersAdded</assignToReference>
+            <operator>AssignCount</operator>
+            <value>
+                <elementReference>campaignMembersCreated</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Thank_You_Screen</targetReference>
+        </connector>
+    </assignments>
     <description>Select a report with Contact ID and Mobile Phone columns to create campaign members with unique mobile numbers</description>
     <dynamicChoiceSets>
         <name>recChoiceCampaigns</name>
@@ -107,14 +127,39 @@
         <name>Thank_You_Screen</name>
         <label>Thank You Screen</label>
         <locationX>176</locationX>
-        <locationY>350</locationY>
+        <locationY>458</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <fields>
             <name>Thank_You_Screen_Message</name>
-            <fieldText>&lt;p&gt;Success! Campaign Members have been added.&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;Success! {!numCampaignMembersAdded} Campaign Members have been added.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembersAdded</leftValueReference>
+                    <operator>GreaterThan</operator>
+                    <rightValue>
+                        <numberValue>0.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
+        <fields>
+            <name>Thank_You_Screen_Message_No_Results</name>
+            <fieldText>&lt;p&gt;There were no additional unique phone numbers to add to the campaign.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembersAdded</leftValueReference>
+                    <operator>EqualTo</operator>
+                    <rightValue>
+                        <numberValue>0.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
@@ -127,6 +172,25 @@
         </connector>
     </start>
     <status>Active</status>
+    <variables>
+        <name>campaignMembersCreated</name>
+        <dataType>SObject</dataType>
+        <isCollection>true</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <objectType>CampaignMember</objectType>
+    </variables>
+    <variables>
+        <name>numCampaignMembersAdded</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+        <value>
+            <numberValue>0.0</numberValue>
+        </value>
+    </variables>
     <variables>
         <name>recordId</name>
         <dataType>SObject</dataType>

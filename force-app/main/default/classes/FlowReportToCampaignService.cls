@@ -41,12 +41,18 @@ public with sharing class FlowReportToCampaignService {
         for (Reports.ReportDetailRow row : factWithDetails.getRows()) {
             // Assumption: Mobile phone is in the second column
             String mobilePhone = (String) row.getDataCells()[1].getLabel();
+            // Guard against empty mobile phone
+            if (String.isBlank(mobilePhone) || mobilePhone == '-') {
+                continue;
+            }
+                
             // Standardize the phone number
             String standardizedPhone = standardizePhoneNumber(mobilePhone);
 
             // Guard against duplicates from existing campaign members
-            if (setExistingCampaignNumbers.contains(standardizedPhone)) 
+            if (setExistingCampaignNumbers.contains(standardizedPhone)) {
                 continue;
+            }
 
             Contact contact = new Contact();
             // Assumption: Contact Id is in the first column
