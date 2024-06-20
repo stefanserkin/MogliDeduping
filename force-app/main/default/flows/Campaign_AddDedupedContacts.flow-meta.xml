@@ -3,8 +3,8 @@
     <actionCalls>
         <name>Add_Contacts_to_Campaign</name>
         <label>Add Contacts to Campaign</label>
-        <locationX>176</locationX>
-        <locationY>242</locationY>
+        <locationX>334</locationX>
+        <locationY>950</locationY>
         <actionName>FlowReportToCampaignService</actionName>
         <actionType>apex</actionType>
         <connector>
@@ -23,7 +23,7 @@
         <inputParameters>
             <name>reportId</name>
             <value>
-                <elementReference>Select_a_report.selectedChoiceValues</elementReference>
+                <elementReference>reportId</elementReference>
             </value>
         </inputParameters>
         <nameSegment>FlowReportToCampaignService</nameSegment>
@@ -37,8 +37,8 @@
     <assignments>
         <name>Set_Campaign_Member_Count</name>
         <label>Set Campaign Member Count</label>
-        <locationX>176</locationX>
-        <locationY>350</locationY>
+        <locationX>334</locationX>
+        <locationY>1058</locationY>
         <assignmentItems>
             <assignToReference>numCampaignMembersAdded</assignToReference>
             <operator>AssignCount</operator>
@@ -50,6 +50,91 @@
             <targetReference>Thank_You_Screen</targetReference>
         </connector>
     </assignments>
+    <assignments>
+        <name>Set_Report_Count</name>
+        <label>Set Report Count</label>
+        <locationX>334</locationX>
+        <locationY>350</locationY>
+        <assignmentItems>
+            <assignToReference>numReportsFound</assignToReference>
+            <operator>AssignCount</operator>
+            <value>
+                <elementReference>Get_Report</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Check_Reports_Quantity</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Report_Id</name>
+        <label>Set Report Id</label>
+        <locationX>50</locationX>
+        <locationY>674</locationY>
+        <assignmentItems>
+            <assignToReference>reportId</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Reports_Datatable.firstSelectedRow.Id</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Add_Contacts_to_Campaign</targetReference>
+        </connector>
+    </assignments>
+    <assignments>
+        <name>Set_Report_Id_to_Single_Result</name>
+        <label>Set Report Id to Single Result</label>
+        <locationX>490</locationX>
+        <locationY>674</locationY>
+        <assignmentItems>
+            <assignToReference>reportId</assignToReference>
+            <operator>Assign</operator>
+            <value>
+                <elementReference>Loop_through_Single_Result.Id</elementReference>
+            </value>
+        </assignmentItems>
+        <connector>
+            <targetReference>Loop_through_Single_Result</targetReference>
+        </connector>
+    </assignments>
+    <decisions>
+        <name>Check_Reports_Quantity</name>
+        <label>Check Reports Quantity</label>
+        <locationX>334</locationX>
+        <locationY>458</locationY>
+        <defaultConnectorLabel>Reports Not Found</defaultConnectorLabel>
+        <rules>
+            <name>Got_Multiple_Reports</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>numReportsFound</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <numberValue>1.0</numberValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Multiple_Reports_Found_Screen</targetReference>
+            </connector>
+            <label>Got Multiple Reports</label>
+        </rules>
+        <rules>
+            <name>Got_One_Report</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>numReportsFound</leftValueReference>
+                <operator>EqualTo</operator>
+                <rightValue>
+                    <numberValue>1.0</numberValue>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Loop_through_Single_Result</targetReference>
+            </connector>
+            <label>Got One Report</label>
+        </rules>
+    </decisions>
     <description>Select a report with Contact ID and Mobile Phone columns to create campaign members with unique mobile numbers</description>
     <dynamicChoiceSets>
         <name>recChoiceCampaigns</name>
@@ -72,6 +157,20 @@
     <environments>Default</environments>
     <interviewLabel>Add Deduped Contacts to Campaign {!$Flow.CurrentDateTime}</interviewLabel>
     <label>Campaign AddDedupedContacts</label>
+    <loops>
+        <name>Loop_through_Single_Result</name>
+        <label>Loop through Single Result</label>
+        <locationX>402</locationX>
+        <locationY>566</locationY>
+        <collectionReference>Get_Report</collectionReference>
+        <iterationOrder>Asc</iterationOrder>
+        <nextValueConnector>
+            <targetReference>Set_Report_Id_to_Single_Result</targetReference>
+        </nextValueConnector>
+        <noMoreValuesConnector>
+            <targetReference>Add_Contacts_to_Campaign</targetReference>
+        </noMoreValuesConnector>
+    </loops>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>
@@ -91,11 +190,34 @@
         </value>
     </processMetadataValues>
     <processType>Flow</processType>
+    <recordLookups>
+        <name>Get_Report</name>
+        <label>Get Report</label>
+        <locationX>334</locationX>
+        <locationY>242</locationY>
+        <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
+        <connector>
+            <targetReference>Set_Report_Count</targetReference>
+        </connector>
+        <filterLogic>and</filterLogic>
+        <filters>
+            <field>Name</field>
+            <operator>EqualTo</operator>
+            <value>
+                <elementReference>Input_ReportName</elementReference>
+            </value>
+        </filters>
+        <getFirstRecordOnly>false</getFirstRecordOnly>
+        <object>Report</object>
+        <sortField>CreatedDate</sortField>
+        <sortOrder>Desc</sortOrder>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+    </recordLookups>
     <screens>
         <name>Error_Screen</name>
         <label>Error Screen</label>
-        <locationX>440</locationX>
-        <locationY>350</locationY>
+        <locationX>882</locationX>
+        <locationY>1058</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -110,29 +232,95 @@
     <screens>
         <name>Input_Screen</name>
         <label>Input Screen</label>
-        <locationX>176</locationX>
+        <locationX>334</locationX>
         <locationY>134</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <connector>
-            <targetReference>Add_Contacts_to_Campaign</targetReference>
+            <targetReference>Get_Report</targetReference>
         </connector>
         <fields>
             <name>Input_Screen_Message</name>
-            <fieldText>&lt;p&gt;Select a report where the Contact ID is in the first column and the Mobile Number is in the second column.&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;Enter the name of a report where the Contact ID is in the first column and the Mobile Number is in the second column.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <fields>
-            <name>Select_a_report</name>
-            <choiceReferences>recChoiceReports</choiceReferences>
-            <extensionName>flowruntime:choiceLookup</extensionName>
-            <fieldText>Select a report</fieldText>
-            <fieldType>ComponentChoice</fieldType>
+            <name>Input_ReportName</name>
+            <dataType>String</dataType>
+            <fieldText>Report Name</fieldText>
+            <fieldType>InputField</fieldType>
+            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+            <isRequired>true</isRequired>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Multiple_Reports_Found_Screen</name>
+        <label>Multiple Reports Found Screen</label>
+        <locationX>50</locationX>
+        <locationY>566</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>true</allowPause>
+        <connector>
+            <targetReference>Set_Report_Id</targetReference>
+        </connector>
+        <fields>
+            <name>Reports_Datatable</name>
+            <dataTypeMappings>
+                <typeName>T</typeName>
+                <typeValue>Report</typeValue>
+            </dataTypeMappings>
+            <extensionName>flowruntime:datatable</extensionName>
+            <fieldType>ComponentInstance</fieldType>
             <inputParameters>
-                <name>placeholder</name>
+                <name>label</name>
                 <value>
-                    <stringValue>Search by report name</stringValue>
+                    <stringValue>Select a report</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>selectionMode</name>
+                <value>
+                    <stringValue>SINGLE_SELECT</stringValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>minRowSelection</name>
+                <value>
+                    <numberValue>1.0</numberValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>shouldDisplayLabel</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>tableData</name>
+                <value>
+                    <elementReference>Get_Report</elementReference>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>isShowSearchBar</name>
+                <value>
+                    <booleanValue>true</booleanValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>maxRowSelection</name>
+                <value>
+                    <numberValue>1.0</numberValue>
+                </value>
+            </inputParameters>
+            <inputParameters>
+                <name>columns</name>
+                <value>
+                    <stringValue>[{&quot;apiName&quot;:&quot;Name&quot;,&quot;guid&quot;:&quot;column-744f&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:0,&quot;label&quot;:&quot;Report Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;DeveloperName&quot;,&quot;guid&quot;:&quot;column-74c9&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:1,&quot;label&quot;:&quot;Report Unique Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;FolderName&quot;,&quot;guid&quot;:&quot;column-92dc&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:2,&quot;label&quot;:&quot;Folder Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;CreatedDate&quot;,&quot;guid&quot;:&quot;column-9937&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:3,&quot;label&quot;:&quot;Created Date&quot;,&quot;type&quot;:&quot;customDateTime&quot;}]</stringValue>
                 </value>
             </inputParameters>
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
@@ -145,8 +333,8 @@
     <screens>
         <name>Thank_You_Screen</name>
         <label>Thank You Screen</label>
-        <locationX>176</locationX>
-        <locationY>458</locationY>
+        <locationX>334</locationX>
+        <locationY>1166</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -184,7 +372,7 @@
         <showHeader>false</showHeader>
     </screens>
     <start>
-        <locationX>50</locationX>
+        <locationX>208</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Input_Screen</targetReference>
@@ -211,11 +399,29 @@
         </value>
     </variables>
     <variables>
+        <name>numReportsFound</name>
+        <dataType>Number</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+        <scale>0</scale>
+        <value>
+            <numberValue>0.0</numberValue>
+        </value>
+    </variables>
+    <variables>
         <name>recordId</name>
         <dataType>SObject</dataType>
         <isCollection>false</isCollection>
         <isInput>true</isInput>
         <isOutput>false</isOutput>
         <objectType>Campaign</objectType>
+    </variables>
+    <variables>
+        <name>reportId</name>
+        <dataType>String</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
     </variables>
 </Flow>
