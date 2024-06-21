@@ -9,6 +9,13 @@
     <description>DO NOT DELETE. Report used in Apex tests for the deduplication of contacts added to campaigns.</description>
     <filter>
         <criteriaItems>
+            <column>CONTACT_ID</column>
+            <columnToColumn>false</columnToColumn>
+            <isUnlocked>true</isUnlocked>
+            <operator>notEqual</operator>
+            <value></value>
+        </criteriaItems>
+        <criteriaItems>
             <column>TITLE</column>
             <columnToColumn>false</columnToColumn>
             <isUnlocked>true</isUnlocked>
