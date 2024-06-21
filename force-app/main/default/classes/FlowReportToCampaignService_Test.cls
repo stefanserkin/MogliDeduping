@@ -4,43 +4,46 @@ public class FlowReportToCampaignService_Test {
     private static final String REPORT_DEVELOPER_NAME = 'Mogli_Deduplication_Test_Report_yOe';
     private static final String FILTERED_TITLE = 'Tester Person';
 
-    private static void makeData() {
-        // Setup campaign
-        Campaign testCampaign = new Campaign(
+    private static Campaign createCampaign() {
+        Campaign campaign = new Campaign(
             Name = 'Test Campaign',
             StartDate = Date.today(),
             EndDate = Date.today().addDays(30),
             Type = 'Email'
         );
-        insert testCampaign;
+        insert campaign;
+        return campaign;
+    }
 
-        // Create test contacts
-        Contact contact1 = new Contact(
-            FirstName = 'Rey',
-            LastName = 'Ordonez',
-            MobilePhone = '123-456-7890',
-            Title = FILTERED_TITLE
-        );
-        Contact contact2 = new Contact(
-            FirstName = 'Edgardo',
-            LastName = 'Alfonzo',
-            MobilePhone = '123-456-7890',
-            Title = FILTERED_TITLE
-        );
-        Contact contact3 = new Contact(
-            FirstName = 'Jon',
-            LastName = 'Olerud',
-            MobilePhone = '987-654-3210',
-            Title = FILTERED_TITLE
-        );
-        insert new List<Contact>{contact1, contact2, contact3};
+    private static List<Contact> createSampleContacts() {
+        List<Contact> contacts = new List<Contact>{
+            new Contact(
+                FirstName = 'Rey',
+                LastName = 'Ordonez',
+                MobilePhone = '123-456-7890',
+                Title = FILTERED_TITLE
+            ),
+            new Contact(
+                FirstName = 'Edgardo',
+                LastName = 'Alfonzo',
+                MobilePhone = '123-456-7890',
+                Title = FILTERED_TITLE
+            ),
+            new Contact(
+                FirstName = 'Jon',
+                LastName = 'Olerud',
+                MobilePhone = '987-654-3210',
+                Title = FILTERED_TITLE
+            )
+        };
+        insert contacts;
+        return contacts;
     }
 
     @IsTest(SeeAllData='true')
     static void testAddUniqueContactsToCampaign() {
-        makeData();
-
-        Campaign campaign = [SELECT Id FROM Campaign LIMIT 1];
+        Campaign campaign = createCampaign();
+        createSampleContacts();
 
         Id reportId = getReportId(REPORT_DEVELOPER_NAME);
 
@@ -61,9 +64,9 @@ public class FlowReportToCampaignService_Test {
 
     @IsTest(SeeAllData='true')
     static void testNoDuplicatesInExistingCampaign() {
-        makeData();
+        Campaign campaign = createCampaign();
+        createSampleContacts();
 
-        Campaign campaign = [SELECT Id FROM Campaign LIMIT 1];
         Contact contact = [SELECT Id FROM Contact WHERE LastName = 'Alfonzo' LIMIT 1];
 
         // Add only one contact with duplicate number to the campaign as an existing member
@@ -92,7 +95,8 @@ public class FlowReportToCampaignService_Test {
 
     @IsTest(SeeAllData='true')
     static void testMultipleReportRuns() {
-        makeData();
+        createCampaign();
+        createSampleContacts();
 
         // Run report a first time to produce report results and create csv of contact ids to filter out
         Id reportId = getReportId(REPORT_DEVELOPER_NAME);
@@ -116,6 +120,7 @@ public class FlowReportToCampaignService_Test {
 
     @IsTest(SeeAllData='true')
     static void testPaginatedReportResults() {
+        createCampaign();
         List<Contact> contacts = new List<Contact>();
         for (Integer i = 0; i < 4001; i++) {
             contacts.add(new Contact(
