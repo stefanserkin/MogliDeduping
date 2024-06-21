@@ -4,8 +4,8 @@
       "path": "force-app",
       "default": true,
       "package": "Mogli Deduping",
-      "versionName": "ver 0.4",
-      "versionNumber": "0.4.0.NEXT",
+      "versionName": "ver 0.5",
+      "versionNumber": "0.5.0.NEXT",
       "versionDescription": ""
     }
   ],
@@ -23,6 +23,7 @@
     "Mogli Deduping@0.2.0-1": "04tDn000000nGhmIAE",
     "Mogli Deduping@0.2.0-2": "04tDn000000nGhrIAE",
     "Mogli Deduping@0.3.0-1": "04tDn000000nGhwIAE",
-    "Mogli Deduping@0.4.0-1": "04tDn000000nGiVIAU"
+    "Mogli Deduping@0.4.0-1": "04tDn000000nGiVIAU",
+    "Mogli Deduping@0.4.0-2": "04tDn000000nGiaIAE"
   }
 }
