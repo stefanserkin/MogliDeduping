@@ -87,11 +87,11 @@ public with sharing class FlowReportToCampaignService {
     }
 
     /**
-     * Get report results. Pass in the reportResults of a previous run to retrieve the next batch.
-     * Pass in a csv of retrieved contact ids to be filtered out of the next run.
+     * Get report results. 
      * @param reportId Id of report to retrieve
-     * @param reportResults Results of the previous run of the report
-     * @param retrievedContactIdCsv Comma-separated contact ids retrieved in the previous batch
+     * @param reportResults Pass in the reportResults of a previous run to retrieve the next batch.
+     * @param retrievedContactIdCsv Pass in a csv of retrieved contact ids to be filtered out of the next run.
+     * @return Reports.ReportResults
      */
     private static Reports.ReportResults runReport(
         String reportId, 
@@ -102,11 +102,10 @@ public with sharing class FlowReportToCampaignService {
             reportResults = Reports.ReportManager.runReport(reportId, true);
         } else {
             // For subsequent runs, contact ids retrieved in previous runs are excluded to create pagination
-            Reports.ReportFilter reportFilter = new Reports.ReportFilter('CONTACT_ID', 'notEqual', contactIdsToFilter);
             Reports.ReportMetadata reportMetadata = reportResults.getReportMetadata();
-            List<Reports.ReportFilter> reportFilters = new List<Reports.ReportFilter>{reportFilter};
-            reportFilters.addAll(reportMetadata.getReportFilters());
-            reportMetadata.setReportFilters(reportFilters);
+            Reports.ReportFilter reportFilter = reportMetadata.getReportFilters()[0];
+            reportFilter.setOperator('notEqual');
+            reportFilter.setValue(contactIdsToFilter);
             reportResults = Reports.ReportManager.runReport(reportId, reportMetadata, true);
         }
         return reportResults;
@@ -116,6 +115,7 @@ public with sharing class FlowReportToCampaignService {
      * Add contacts to a campaign
      * @param contacts List of contacts to add to the campaign
      * @param campaignId Id of campaign to add the contacts to
+     * @return List<CampaignMember> Committed campaign member records
      */
     private static List<CampaignMember> addContactsToCampaign(
         List<Contact> contacts, 
@@ -139,6 +139,7 @@ public with sharing class FlowReportToCampaignService {
     /**
      * Get existing campaign members to protect against duplicates with existing mobile numbers
      * @param campaignId Id of campaign
+     * @return Set<String> Mobile numbers of existing campaign members
      */
     private static Set<String> getExistingCampaignNumbers(
         Id campaignId
