@@ -3,6 +3,9 @@
  */
 public with sharing class FlowReportToCampaignService {
 
+    private static final String OPERATOR_NOT_EQUAL = 'notEqual';
+    private static final String NON_NUMERICAL_CHARACTERS = '[^0-9]';
+
     @InvocableMethod(
         label='Add Contacts with Unique Mobile Numbers to Campaign' 
         description='Retrieve report data, deduplicate contacts based on phone numbers, and add them to a campaign.'
@@ -105,7 +108,7 @@ public with sharing class FlowReportToCampaignService {
             // For subsequent runs, contact ids retrieved in previous runs are excluded to create pagination
             Reports.ReportMetadata reportMetadata = reportResults.getReportMetadata();
             Reports.ReportFilter reportFilter = reportMetadata.getReportFilters()[0];
-            reportFilter.setOperator('notEqual');
+            reportFilter.setOperator(OPERATOR_NOT_EQUAL);
             reportFilter.setValue(contactIdsToFilter);
             reportResults = Reports.ReportManager.runReport(reportId, reportMetadata, true);
         }
@@ -162,7 +165,7 @@ public with sharing class FlowReportToCampaignService {
      * @return String Standardized phone number
      */
     private static String standardizePhoneNumber(String phone) {
-        return phone != null ? phone.replaceAll('[^0-9]', '') : null;
+        return phone != null ? phone.replaceAll(NON_NUMERICAL_CHARACTERS, '') : null;
     }
 
     public class Request {
