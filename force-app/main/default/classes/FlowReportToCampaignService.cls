@@ -4,7 +4,8 @@
 public with sharing class FlowReportToCampaignService {
 
     private static final String OPERATOR_NOT_EQUAL = 'notEqual';
-    private static final String NON_NUMERICAL_CHARACTERS = '[^0-9]';
+    private static final String NON_NUMBERS = '[^0-9]';
+    private static final String NUMBERS_ONLY = '\\d+';
 
     @InvocableMethod(
         label='Add Contacts with Unique Mobile Numbers to Campaign' 
@@ -91,6 +92,7 @@ public with sharing class FlowReportToCampaignService {
 
     /**
      * Get report results. 
+     * For subsequent runs, contact ids retrieved in previous runs are excluded to create pagination.
      * @param reportId Id of report to retrieve
      * @param reportResults Pass in the reportResults of a previous run to retrieve the next batch.
      * @param retrievedContactIdCsv Pass in a csv of retrieved contact ids to be filtered out of the next run.
@@ -103,16 +105,55 @@ public with sharing class FlowReportToCampaignService {
         String contactIdsToFilter
     ) {
         if (reportResults == null) {
+            // First run
             reportResults = Reports.ReportManager.runReport(reportId, true);
         } else {
-            // For subsequent runs, contact ids retrieved in previous runs are excluded to create pagination
             Reports.ReportMetadata reportMetadata = reportResults.getReportMetadata();
-            Reports.ReportFilter reportFilter = reportMetadata.getReportFilters()[0];
-            reportFilter.setOperator(OPERATOR_NOT_EQUAL);
-            reportFilter.setValue(contactIdsToFilter);
+            // Reconstruct filters with original filters + omitted contact ids
+            List<Reports.ReportFilter> filters = new List<Reports.ReportFilter>();
+            filters.addAll(reportMetadata.getReportFilters());
+            // Get first column of report, which must reference the contact id field
+            String firstColumnName = reportMetadata.getDetailColumns()[0];
+            Reports.ReportFilter contactIdFilter = new Reports.ReportFilter(
+                firstColumnName, 
+                OPERATOR_NOT_EQUAL, 
+                contactIdsToFilter
+            );
+            filters.add(contactIdFilter);
+            reportMetadata.setReportFilters(filters);
+            // Preserve filter logic while adding the new filter on contact ids
+            String filterLogic = reportMetadata.getReportBooleanFilter();
+            if (filterLogic != null) {
+                reportMetadata.setReportBooleanFilter( getUpdatedFilterLogic(filterLogic) );
+            }
+            // Run report
             reportResults = Reports.ReportManager.runReport(reportId, reportMetadata, true);
         }
         return reportResults;
+    }
+
+    /**
+     * Append a newly added filter to filter logic
+     *      1 OR 2 => (1 OR 2) AND 3
+     *      1 AND (2 OR 3) => (1 AND (2 OR 3)) AND 4
+     * @param originalFilter Previous filter logic
+     * @return String Updated filter logic
+     */
+    private static String getUpdatedFilterLogic(
+        String originalFilter
+    ) {
+        Pattern numberPattern = Pattern.compile(NUMBERS_ONLY);
+        Matcher matcher = numberPattern.matcher(originalFilter);
+        // Get unique numbers and order them
+        Set<Integer> numbers = new Set<Integer>();
+        while (matcher.find()) {
+            numbers.add(Integer.valueOf(matcher.group()));
+        }
+        List<Integer> orderedNumbers = new List<Integer>(numbers);
+        orderedNumbers.sort();
+        // Increment the highest number by 1
+        Integer newNumber = orderedNumbers[orderedNumbers.size() - 1] + 1;
+        return '(' + originalFilter + ') AND ' + newNumber;
     }
 
     /**
@@ -165,7 +206,7 @@ public with sharing class FlowReportToCampaignService {
      * @return String Standardized phone number
      */
     private static String standardizePhoneNumber(String phone) {
-        return phone != null ? phone.replaceAll(NON_NUMERICAL_CHARACTERS, '') : null;
+        return phone != null ? phone.replaceAll(NON_NUMBERS, '') : null;
     }
 
     public class Request {

@@ -17,24 +17,10 @@ public class FlowReportToCampaignService_Test {
 
     private static List<Contact> createSampleContacts() {
         List<Contact> contacts = new List<Contact>{
-            new Contact(
-                FirstName = 'Rey',
-                LastName = 'Ordonez',
-                MobilePhone = '123-456-7890',
-                Title = FILTERED_TITLE
-            ),
-            new Contact(
-                FirstName = 'Edgardo',
-                LastName = 'Alfonzo',
-                MobilePhone = '123-456-7890',
-                Title = FILTERED_TITLE
-            ),
-            new Contact(
-                FirstName = 'Jon',
-                LastName = 'Olerud',
-                MobilePhone = '987-654-3210',
-                Title = FILTERED_TITLE
-            )
+            new Contact(MobilePhone = '123-456-7890',FirstName = 'Rey',LastName = 'Ordonez',Title = FILTERED_TITLE),
+            new Contact(MobilePhone = '123-456-7890',FirstName = 'Edgardo',LastName = 'Alfonzo',Title = FILTERED_TITLE),
+            new Contact(MobilePhone = '987-654-3210',FirstName = 'Jon',LastName = 'Olerud',Title = FILTERED_TITLE),
+            new Contact(FirstName = 'No',LastName = 'Phone',Title = FILTERED_TITLE)
         };
         insert contacts;
         return contacts;
