@@ -93,6 +93,7 @@ public with sharing class FlowReportToCampaignService {
      * @param retrievedContactIdCsv Pass in a csv of retrieved contact ids to be filtered out of the next run.
      * @return Reports.ReportResults
      */
+    @TestVisible
     private static Reports.ReportResults runReport(
         String reportId, 
         Reports.ReportResults reportResults, 
