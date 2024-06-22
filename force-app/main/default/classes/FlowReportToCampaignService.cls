@@ -23,7 +23,7 @@ public with sharing class FlowReportToCampaignService {
                 Result result = new Result();
                 result.campaignMembers = campaignMembers;
                 lstResults.add(result);
-            } 
+            }
         } catch (Exception e) {
             System.debug('Failed to add contacts to campaign: ' + e.getMessage());
         }
