@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Flow xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <actionCalls>
-        <name>Add_Contacts_to_Campaign</name>
-        <label>Add Contacts to Campaign</label>
-        <locationX>314</locationX>
-        <locationY>998</locationY>
+        <name>Find_Unique_Contacts</name>
+        <label>Find Unique Contacts</label>
+        <locationX>468</locationX>
+        <locationY>1214</locationY>
         <actionName>FlowReportToCampaignService</actionName>
         <actionType>apex</actionType>
         <connector>
@@ -22,9 +22,21 @@
             </value>
         </inputParameters>
         <inputParameters>
+            <name>contactIdColumn</name>
+            <value>
+                <elementReference>Contact_ID_Report_Column</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
             <name>contactPhoneField</name>
             <value>
                 <elementReference>Contact_Phone_Field</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
+            <name>phoneNumberColumn</name>
+            <value>
+                <elementReference>Phone_Number_Report_Column</elementReference>
             </value>
         </inputParameters>
         <inputParameters>
@@ -43,7 +55,7 @@
     <actionCalls>
         <name>Get_Contact_Fields</name>
         <label>Get Contact Fields</label>
-        <locationX>710</locationX>
+        <locationX>1007</locationX>
         <locationY>134</locationY>
         <actionName>FlowSObjectDescriber</actionName>
         <actionType>apex</actionType>
@@ -68,13 +80,17 @@
     <actionCalls>
         <name>Get_Report_Columns</name>
         <label>Get Report Columns</label>
-        <locationX>314</locationX>
+        <locationX>468</locationX>
         <locationY>782</locationY>
         <actionName>FlowReportColumnSelector</actionName>
         <actionType>apex</actionType>
         <connector>
-            <targetReference>Column_Mapping_Screen</targetReference>
+            <targetReference>Filter_to_ID_Columns</targetReference>
         </connector>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
         <flowTransactionModel>Automatic</flowTransactionModel>
         <inputParameters>
             <name>reportId</name>
@@ -90,8 +106,8 @@
     <assignments>
         <name>Set_Campaign_Member_Count</name>
         <label>Set Campaign Member Count</label>
-        <locationX>314</locationX>
-        <locationY>1106</locationY>
+        <locationX>468</locationX>
+        <locationY>1322</locationY>
         <assignmentItems>
             <assignToReference>numCampaignMembers</assignToReference>
             <operator>AssignCount</operator>
@@ -107,7 +123,7 @@
         <name>Filter_Fields</name>
         <elementSubtype>FilterCollectionProcessor</elementSubtype>
         <label>Filter Fields</label>
-        <locationX>710</locationX>
+        <locationX>1007</locationX>
         <locationY>242</locationY>
         <assignNextValueToReference>currentItem_Filter_Fields</assignNextValueToReference>
         <collectionProcessorType>FilterCollectionProcessor</collectionProcessorType>
@@ -132,10 +148,84 @@
         </connector>
     </collectionProcessors>
     <collectionProcessors>
+        <name>Filter_to_ID_Columns</name>
+        <elementSubtype>FilterCollectionProcessor</elementSubtype>
+        <label>Filter to ID Columns</label>
+        <locationX>468</locationX>
+        <locationY>890</locationY>
+        <assignNextValueToReference>currentItem_Filter_to_ID_Columns</assignNextValueToReference>
+        <collectionProcessorType>FilterCollectionProcessor</collectionProcessorType>
+        <collectionReference>Get_Report_Columns.reportColumnOptions</collectionReference>
+        <conditionLogic>or</conditionLogic>
+        <conditions>
+            <leftValueReference>currentItem_Filter_to_ID_Columns.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>String</stringValue>
+            </rightValue>
+        </conditions>
+        <conditions>
+            <leftValueReference>currentItem_Filter_to_ID_Columns.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>Id</stringValue>
+            </rightValue>
+        </conditions>
+        <connector>
+            <targetReference>Filter_to_Phone_Columns</targetReference>
+        </connector>
+    </collectionProcessors>
+    <collectionProcessors>
+        <name>Filter_to_Phone_Columns</name>
+        <elementSubtype>FilterCollectionProcessor</elementSubtype>
+        <label>Filter to Phone Columns</label>
+        <locationX>468</locationX>
+        <locationY>998</locationY>
+        <assignNextValueToReference>currentItem_Filter_to_Phone_Columns</assignNextValueToReference>
+        <collectionProcessorType>FilterCollectionProcessor</collectionProcessorType>
+        <collectionReference>Get_Report_Columns.reportColumnOptions</collectionReference>
+        <conditionLogic>or</conditionLogic>
+        <conditions>
+            <leftValueReference>currentItem_Filter_to_Phone_Columns.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>String</stringValue>
+            </rightValue>
+        </conditions>
+        <conditions>
+            <leftValueReference>currentItem_Filter_to_Phone_Columns.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>Phone</stringValue>
+            </rightValue>
+        </conditions>
+        <connector>
+            <targetReference>Column_Mapping_Screen</targetReference>
+        </connector>
+    </collectionProcessors>
+    <collectionProcessors>
+        <name>Limit_Collection_Size</name>
+        <elementSubtype>SortCollectionProcessor</elementSubtype>
+        <label>Limit Collection Size</label>
+        <locationX>50</locationX>
+        <locationY>1754</locationY>
+        <collectionProcessorType>SortCollectionProcessor</collectionProcessorType>
+        <collectionReference>campaignMembers</collectionReference>
+        <connector>
+            <targetReference>Insert_Campaign_Members</targetReference>
+        </connector>
+        <limit>10000</limit>
+        <sortOptions>
+            <doesPutEmptyStringAndNullFirst>false</doesPutEmptyStringAndNullFirst>
+            <sortField>ContactId</sortField>
+            <sortOrder>Asc</sortOrder>
+        </sortOptions>
+    </collectionProcessors>
+    <collectionProcessors>
         <name>Sort_Fields</name>
         <elementSubtype>SortCollectionProcessor</elementSubtype>
         <label>Sort Fields</label>
-        <locationX>710</locationX>
+        <locationX>1007</locationX>
         <locationY>350</locationY>
         <collectionProcessorType>SortCollectionProcessor</collectionProcessorType>
         <collectionReference>Filter_Fields</collectionReference>
@@ -148,10 +238,42 @@
             <sortOrder>Asc</sortOrder>
         </sortOptions>
     </collectionProcessors>
+    <constants>
+        <name>DML_LIMIT</name>
+        <dataType>Number</dataType>
+        <value>
+            <numberValue>10000.0</numberValue>
+        </value>
+    </constants>
+    <decisions>
+        <name>Check_for_Too_Many_Records</name>
+        <label>Check for Too Many Records</label>
+        <locationX>182</locationX>
+        <locationY>1646</locationY>
+        <defaultConnector>
+            <targetReference>Insert_Campaign_Members</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Default Outcome</defaultConnectorLabel>
+        <rules>
+            <name>Has_Too_Many_Records</name>
+            <conditionLogic>and</conditionLogic>
+            <conditions>
+                <leftValueReference>numCampaignMembers</leftValueReference>
+                <operator>GreaterThan</operator>
+                <rightValue>
+                    <elementReference>DML_LIMIT</elementReference>
+                </rightValue>
+            </conditions>
+            <connector>
+                <targetReference>Limit_Collection_Size</targetReference>
+            </connector>
+            <label>Has Too Many Records</label>
+        </rules>
+    </decisions>
     <decisions>
         <name>Check_Get_Reports</name>
         <label>Check Get Reports</label>
-        <locationX>710</locationX>
+        <locationX>1007</locationX>
         <locationY>566</locationY>
         <defaultConnector>
             <isGoTo>true</isGoTo>
@@ -169,7 +291,7 @@
                 </rightValue>
             </conditions>
             <connector>
-                <targetReference>Input_Screen</targetReference>
+                <targetReference>Report_Selection_Screen</targetReference>
             </connector>
             <label>Got Reports</label>
         </rules>
@@ -177,8 +299,8 @@
     <decisions>
         <name>Check_Number_of_Campaign_Members</name>
         <label>Check Number of Campaign Members</label>
-        <locationX>314</locationX>
-        <locationY>1214</locationY>
+        <locationX>468</locationX>
+        <locationY>1430</locationY>
         <defaultConnector>
             <targetReference>Campaign_Members_Not_Found_Screen</targetReference>
         </defaultConnector>
@@ -209,8 +331,16 @@
         <valueField>name</valueField>
     </dynamicChoiceSets>
     <dynamicChoiceSets>
-        <name>collChoiceReportColumns</name>
-        <collectionReference>Get_Report_Columns.reportColumnOptions</collectionReference>
+        <name>collChoiceReportColumnsIds</name>
+        <collectionReference>Filter_to_ID_Columns</collectionReference>
+        <dataType>String</dataType>
+        <displayField>labelAndDataType</displayField>
+        <object xsi:nil="true"/>
+        <valueField>name</valueField>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>collChoiceReportColumnsPhone</name>
+        <collectionReference>Filter_to_Phone_Columns</collectionReference>
         <dataType>String</dataType>
         <displayField>labelAndDataType</displayField>
         <object xsi:nil="true"/>
@@ -244,6 +374,7 @@
     </dynamicChoiceSets>
     <environments>Default</environments>
     <interviewLabel>Add Deduped Contacts to Campaign {!$Flow.CurrentDateTime}</interviewLabel>
+    <isAdditionalPermissionRequiredToRun>true</isAdditionalPermissionRequiredToRun>
     <label>Campaign AddDedupedContacts</label>
     <processMetadataValues>
         <name>BuilderType</name>
@@ -267,8 +398,8 @@
     <recordCreates>
         <name>Insert_Campaign_Members</name>
         <label>Insert Campaign Members</label>
-        <locationX>50</locationX>
-        <locationY>1430</locationY>
+        <locationX>182</locationX>
+        <locationY>1946</locationY>
         <connector>
             <targetReference>Thank_You_Screen</targetReference>
         </connector>
@@ -280,7 +411,7 @@
     <recordLookups>
         <name>Get_Reports</name>
         <label>Get Reports</label>
-        <locationX>710</locationX>
+        <locationX>1007</locationX>
         <locationY>458</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
@@ -299,8 +430,8 @@
     <screens>
         <name>Campaign_Members_Not_Found_Screen</name>
         <label>Campaign Members Not Found Screen</label>
-        <locationX>578</locationX>
-        <locationY>1322</locationY>
+        <locationX>754</locationX>
+        <locationY>1538</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -315,29 +446,29 @@
     <screens>
         <name>Column_Mapping_Screen</name>
         <label>Column Mapping Screen</label>
-        <locationX>314</locationX>
-        <locationY>890</locationY>
+        <locationX>468</locationX>
+        <locationY>1106</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <connector>
-            <targetReference>Add_Contacts_to_Campaign</targetReference>
+            <targetReference>Find_Unique_Contacts</targetReference>
         </connector>
         <fields>
             <name>Column_Mapping_Screen_Message</name>
-            <fieldText>&lt;p&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;Map report columns to contact fields.&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p style=&quot;text-align: center;&quot;&gt;&lt;strong style=&quot;font-size: 16px;&quot;&gt;Map Report Columns to Contact Fields&lt;/strong&gt;&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
         </fields>
         <fields>
-            <name>Record_ID_Section_Header</name>
-            <fieldText>Record ID</fieldText>
+            <name>Contact_ID_Section_Header</name>
+            <fieldText>Contact ID</fieldText>
             <fieldType>RegionContainer</fieldType>
             <fields>
-                <name>Record_ID_Section_Header_Column1</name>
+                <name>Contact_ID_Section_Header_Column1</name>
                 <fieldType>Region</fieldType>
                 <fields>
                     <name>Contact_ID_Report_Column</name>
-                    <choiceReferences>collChoiceReportColumns</choiceReferences>
+                    <choiceReferences>collChoiceReportColumnsIds</choiceReferences>
                     <dataType>String</dataType>
                     <fieldText>Contact ID Report Column</fieldText>
                     <fieldType>DropdownBox</fieldType>
@@ -353,7 +484,7 @@
                 <isRequired>false</isRequired>
             </fields>
             <fields>
-                <name>Record_ID_Section_Header_Column2</name>
+                <name>Contact_ID_Section_Header_Column2</name>
                 <fieldType>Region</fieldType>
                 <inputParameters>
                     <name>width</name>
@@ -364,7 +495,7 @@
                 <isRequired>false</isRequired>
             </fields>
             <fields>
-                <name>Record_ID_Section_Header_Column3</name>
+                <name>Contact_ID_Section_Header_Column3</name>
                 <fieldType>Region</fieldType>
                 <fields>
                     <name>Contact_ID_Field</name>
@@ -400,7 +531,7 @@
                 <fieldType>Region</fieldType>
                 <fields>
                     <name>Phone_Number_Report_Column</name>
-                    <choiceReferences>collChoiceReportColumns</choiceReferences>
+                    <choiceReferences>collChoiceReportColumnsPhone</choiceReferences>
                     <dataType>String</dataType>
                     <fieldText>Phone Number Report Column</fieldText>
                     <fieldType>DropdownBox</fieldType>
@@ -457,13 +588,13 @@
     <screens>
         <name>Confirm_Before_Insert_Screen</name>
         <label>Confirm Before Insert Screen</label>
-        <locationX>50</locationX>
-        <locationY>1322</locationY>
+        <locationX>182</locationX>
+        <locationY>1538</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <connector>
-            <targetReference>Insert_Campaign_Members</targetReference>
+            <targetReference>Check_for_Too_Many_Records</targetReference>
         </connector>
         <fields>
             <name>Confirm_Before_Insert_Message_One</name>
@@ -495,6 +626,21 @@
                 </conditions>
             </visibilityRule>
         </fields>
+        <fields>
+            <name>DML_Limit_Note</name>
+            <fieldText>&lt;p&gt;&lt;span style=&quot;color: rgb(179, 0, 0);&quot;&gt;Note: Your report has over 10,000 unique contacts. Only the first 10,000 records will be added to the campaign.&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembers</leftValueReference>
+                    <operator>GreaterThan</operator>
+                    <rightValue>
+                        <numberValue>10000.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
         <nextOrFinishButtonLabel>Add Campaign Members</nextOrFinishButtonLabel>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
@@ -502,8 +648,8 @@
     <screens>
         <name>Error_Screen</name>
         <label>Error Screen</label>
-        <locationX>314</locationX>
-        <locationY>1538</locationY>
+        <locationX>490</locationX>
+        <locationY>2054</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -538,9 +684,9 @@
         <showHeader>false</showHeader>
     </screens>
     <screens>
-        <name>Input_Screen</name>
-        <label>Input Screen</label>
-        <locationX>314</locationX>
+        <name>Report_Selection_Screen</name>
+        <label>Report Selection Screen</label>
+        <locationX>468</locationX>
         <locationY>674</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
@@ -549,15 +695,10 @@
             <targetReference>Get_Report_Columns</targetReference>
         </connector>
         <fields>
-            <name>Input_Screen_Message</name>
-            <fieldText>&lt;p&gt;Enter the name of a report where the Contact ID is in the first column and the Mobile Number is in the second column.&lt;/p&gt;</fieldText>
-            <fieldType>DisplayText</fieldType>
-        </fields>
-        <fields>
             <name>Select_a_Report</name>
             <choiceReferences>collChoiceReports</choiceReferences>
             <extensionName>flowruntime:choiceLookup</extensionName>
-            <fieldText>Select a Report</fieldText>
+            <fieldText>Select a tabular report with rows of contacts</fieldText>
             <fieldType>ComponentChoice</fieldType>
             <inputParameters>
                 <name>placeholder</name>
@@ -575,8 +716,8 @@
     <screens>
         <name>Thank_You_Screen</name>
         <label>Thank You Screen</label>
-        <locationX>50</locationX>
-        <locationY>1538</locationY>
+        <locationX>182</locationX>
+        <locationY>2054</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
@@ -584,18 +725,43 @@
             <name>Thank_You_Screen_Message</name>
             <fieldText>&lt;p&gt;Success! {!numCampaignMembers} Campaign Members have been added.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembers</leftValueReference>
+                    <operator>GreaterThan</operator>
+                    <rightValue>
+                        <numberValue>1.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
+        <fields>
+            <name>Thank_You_Screen_Message_Single</name>
+            <fieldText>&lt;p&gt;&lt;span style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;Success! {!numCampaignMembers} Campaign Members was added.&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembers</leftValueReference>
+                    <operator>EqualTo</operator>
+                    <rightValue>
+                        <numberValue>1.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
     </screens>
     <start>
-        <locationX>584</locationX>
+        <locationX>881</locationX>
         <locationY>0</locationY>
         <connector>
             <targetReference>Get_Contact_Fields</targetReference>
         </connector>
     </start>
-    <status>Draft</status>
+    <status>Active</status>
     <textTemplates>
         <name>arrow</name>
         <isViewedAsPlainText>false</isViewedAsPlainText>
@@ -612,6 +778,22 @@
     <variables>
         <name>currentItem_Filter_Fields</name>
         <apexClass>SObjectFieldOption</apexClass>
+        <dataType>Apex</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>currentItem_Filter_to_ID_Columns</name>
+        <apexClass>ReportColumnOption</apexClass>
+        <dataType>Apex</dataType>
+        <isCollection>false</isCollection>
+        <isInput>false</isInput>
+        <isOutput>false</isOutput>
+    </variables>
+    <variables>
+        <name>currentItem_Filter_to_Phone_Columns</name>
+        <apexClass>ReportColumnOption</apexClass>
         <dataType>Apex</dataType>
         <isCollection>false</isCollection>
         <isInput>false</isInput>
