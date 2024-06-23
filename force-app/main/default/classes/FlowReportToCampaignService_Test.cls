@@ -88,11 +88,18 @@ public class FlowReportToCampaignService_Test {
 
     @IsTest(SeeAllData='true')
     static void testMultipleReportRuns() {
-        createCampaign();
+        Campaign campaign = createCampaign();
         createSampleContacts();
 
-        // Run report a first time to produce report results and create csv of contact ids to filter out
         Id reportId = getReportId(REPORT_DEVELOPER_NAME);
+
+        FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
+        request.reportId = reportId;
+        request.campaignId = campaign.Id;
+        request.contactIdColumn = CONTACT_ID_COLUMN_NAME;
+        request.phoneNumberColumn = PHONE_NUMBER_COLUMN_NAME;
+
+        // Run report a first time to produce report results and create csv of contact ids to filter out
         Reports.ReportResults reportResults = Reports.ReportManager.runReport(reportId, true);
         Reports.ReportFactWithDetails facts = (Reports.ReportFactWithDetails) reportResults.getFactMap().get('T!T');
         String contactIds = '';
@@ -102,7 +109,7 @@ public class FlowReportToCampaignService_Test {
         contactIds = contactIds.removeEnd(',');
 
         Test.startTest();
-        Reports.ReportResults newResults = FlowReportToCampaignService.runReport(reportId, reportResults, contactIds);
+        Reports.ReportResults newResults = FlowReportToCampaignService.runReport(request, reportResults, contactIds);
         Test.stopTest();
 
         Assert.isFalse(newResults.getReportMetadata().getReportFilters().isEmpty(), 'Report filters should not be empty');

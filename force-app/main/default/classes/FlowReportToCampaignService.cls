@@ -70,7 +70,7 @@ public with sharing class FlowReportToCampaignService {
         String retrievedContactIdCsv = '';
 
         do {
-            reportResults = runReport(request.reportId, reportResults, retrievedContactIdCsv);
+            reportResults = runReport(request, reportResults, retrievedContactIdCsv);
             Reports.ReportFactWithDetails factWithDetails = (Reports.ReportFactWithDetails) reportResults.getFactMap().get('T!T');
 
             Set<Id> contactIds = new Set<Id>();
@@ -124,22 +124,20 @@ public with sharing class FlowReportToCampaignService {
      */
     @TestVisible
     private static Reports.ReportResults runReport(
-        String reportId, 
+        Request request,
         Reports.ReportResults reportResults, 
         String contactIdsToFilter
     ) {
         if (reportResults == null) {
             // First run
-            reportResults = Reports.ReportManager.runReport(reportId, true);
+            reportResults = Reports.ReportManager.runReport(request.reportId, true);
         } else {
             Reports.ReportMetadata reportMetadata = reportResults.getReportMetadata();
             // Reconstruct filters with original filters + omitted contact ids
             List<Reports.ReportFilter> filters = new List<Reports.ReportFilter>();
             filters.addAll(reportMetadata.getReportFilters());
-            // Get first column of report, which must reference the contact id field
-            String firstColumnName = reportMetadata.getDetailColumns()[0];
             Reports.ReportFilter contactIdFilter = new Reports.ReportFilter(
-                firstColumnName, 
+                request.contactIdColumn, 
                 OPERATOR_NOT_EQUAL, 
                 contactIdsToFilter
             );
@@ -151,7 +149,7 @@ public with sharing class FlowReportToCampaignService {
                 reportMetadata.setReportBooleanFilter( getUpdatedFilterLogic(filterLogic) );
             }
             // Run report
-            reportResults = Reports.ReportManager.runReport(reportId, reportMetadata, true);
+            reportResults = Reports.ReportManager.runReport(request.reportId, reportMetadata, true);
         }
         return reportResults;
     }
