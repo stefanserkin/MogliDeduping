@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Flow xmlns="http://soap.sforce.com/2006/04/metadata">
+<Flow xmlns="http://soap.sforce.com/2006/04/metadata" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <actionCalls>
         <name>Add_Contacts_to_Campaign</name>
         <label>Add Contacts to Campaign</label>
-        <locationX>334</locationX>
-        <locationY>950</locationY>
+        <locationX>314</locationX>
+        <locationY>998</locationY>
         <actionName>FlowReportToCampaignService</actionName>
         <actionType>apex</actionType>
         <connector>
             <targetReference>Set_Campaign_Member_Count</targetReference>
         </connector>
         <faultConnector>
+            <isGoTo>true</isGoTo>
             <targetReference>Error_Screen</targetReference>
         </faultConnector>
         <flowTransactionModel>Automatic</flowTransactionModel>
@@ -21,124 +22,208 @@
             </value>
         </inputParameters>
         <inputParameters>
+            <name>contactPhoneField</name>
+            <value>
+                <elementReference>Contact_Phone_Field</elementReference>
+            </value>
+        </inputParameters>
+        <inputParameters>
             <name>reportId</name>
             <value>
-                <elementReference>reportId</elementReference>
+                <elementReference>Select_a_Report.selectedChoiceValues</elementReference>
             </value>
         </inputParameters>
         <nameSegment>FlowReportToCampaignService</nameSegment>
         <outputParameters>
-            <assignToReference>campaignMembersCreated</assignToReference>
+            <assignToReference>campaignMembers</assignToReference>
             <name>campaignMembers</name>
         </outputParameters>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Get_Contact_Fields</name>
+        <label>Get Contact Fields</label>
+        <locationX>710</locationX>
+        <locationY>134</locationY>
+        <actionName>FlowSObjectDescriber</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Filter_Fields</targetReference>
+        </connector>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <flowTransactionModel>Automatic</flowTransactionModel>
+        <inputParameters>
+            <name>sObjectApiName</name>
+            <value>
+                <stringValue>Contact</stringValue>
+            </value>
+        </inputParameters>
+        <nameSegment>FlowSObjectDescriber</nameSegment>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
+        <versionSegment>1</versionSegment>
+    </actionCalls>
+    <actionCalls>
+        <name>Get_Report_Columns</name>
+        <label>Get Report Columns</label>
+        <locationX>314</locationX>
+        <locationY>782</locationY>
+        <actionName>FlowReportColumnSelector</actionName>
+        <actionType>apex</actionType>
+        <connector>
+            <targetReference>Column_Mapping_Screen</targetReference>
+        </connector>
+        <flowTransactionModel>Automatic</flowTransactionModel>
+        <inputParameters>
+            <name>reportId</name>
+            <value>
+                <elementReference>Select_a_Report.selectedChoiceValues</elementReference>
+            </value>
+        </inputParameters>
+        <nameSegment>FlowReportColumnSelector</nameSegment>
+        <storeOutputAutomatically>true</storeOutputAutomatically>
         <versionSegment>1</versionSegment>
     </actionCalls>
     <apiVersion>61.0</apiVersion>
     <assignments>
         <name>Set_Campaign_Member_Count</name>
         <label>Set Campaign Member Count</label>
-        <locationX>334</locationX>
-        <locationY>1058</locationY>
+        <locationX>314</locationX>
+        <locationY>1106</locationY>
         <assignmentItems>
-            <assignToReference>numCampaignMembersAdded</assignToReference>
+            <assignToReference>numCampaignMembers</assignToReference>
             <operator>AssignCount</operator>
             <value>
-                <elementReference>campaignMembersCreated</elementReference>
+                <elementReference>campaignMembers</elementReference>
             </value>
         </assignmentItems>
         <connector>
-            <targetReference>Thank_You_Screen</targetReference>
+            <targetReference>Check_Number_of_Campaign_Members</targetReference>
         </connector>
     </assignments>
-    <assignments>
-        <name>Set_Report_Count</name>
-        <label>Set Report Count</label>
-        <locationX>334</locationX>
+    <collectionProcessors>
+        <name>Filter_Fields</name>
+        <elementSubtype>FilterCollectionProcessor</elementSubtype>
+        <label>Filter Fields</label>
+        <locationX>710</locationX>
+        <locationY>242</locationY>
+        <assignNextValueToReference>currentItem_Filter_Fields</assignNextValueToReference>
+        <collectionProcessorType>FilterCollectionProcessor</collectionProcessorType>
+        <collectionReference>Get_Contact_Fields.fields</collectionReference>
+        <conditionLogic>or</conditionLogic>
+        <conditions>
+            <leftValueReference>currentItem_Filter_Fields.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>PHONE</stringValue>
+            </rightValue>
+        </conditions>
+        <conditions>
+            <leftValueReference>currentItem_Filter_Fields.dataType</leftValueReference>
+            <operator>EqualTo</operator>
+            <rightValue>
+                <stringValue>STRING</stringValue>
+            </rightValue>
+        </conditions>
+        <connector>
+            <targetReference>Sort_Fields</targetReference>
+        </connector>
+    </collectionProcessors>
+    <collectionProcessors>
+        <name>Sort_Fields</name>
+        <elementSubtype>SortCollectionProcessor</elementSubtype>
+        <label>Sort Fields</label>
+        <locationX>710</locationX>
         <locationY>350</locationY>
-        <assignmentItems>
-            <assignToReference>numReportsFound</assignToReference>
-            <operator>AssignCount</operator>
-            <value>
-                <elementReference>Get_Report</elementReference>
-            </value>
-        </assignmentItems>
+        <collectionProcessorType>SortCollectionProcessor</collectionProcessorType>
+        <collectionReference>Filter_Fields</collectionReference>
         <connector>
-            <targetReference>Check_Reports_Quantity</targetReference>
+            <targetReference>Get_Reports</targetReference>
         </connector>
-    </assignments>
-    <assignments>
-        <name>Set_Report_Id</name>
-        <label>Set Report Id</label>
-        <locationX>50</locationX>
-        <locationY>674</locationY>
-        <assignmentItems>
-            <assignToReference>reportId</assignToReference>
-            <operator>Assign</operator>
-            <value>
-                <elementReference>Reports_Datatable.firstSelectedRow.Id</elementReference>
-            </value>
-        </assignmentItems>
-        <connector>
-            <targetReference>Add_Contacts_to_Campaign</targetReference>
-        </connector>
-    </assignments>
-    <assignments>
-        <name>Set_Report_Id_to_Single_Result</name>
-        <label>Set Report Id to Single Result</label>
-        <locationX>490</locationX>
-        <locationY>674</locationY>
-        <assignmentItems>
-            <assignToReference>reportId</assignToReference>
-            <operator>Assign</operator>
-            <value>
-                <elementReference>Loop_through_Single_Result.Id</elementReference>
-            </value>
-        </assignmentItems>
-        <connector>
-            <targetReference>Loop_through_Single_Result</targetReference>
-        </connector>
-    </assignments>
+        <sortOptions>
+            <doesPutEmptyStringAndNullFirst>false</doesPutEmptyStringAndNullFirst>
+            <sortField>label</sortField>
+            <sortOrder>Asc</sortOrder>
+        </sortOptions>
+    </collectionProcessors>
     <decisions>
-        <name>Check_Reports_Quantity</name>
-        <label>Check Reports Quantity</label>
-        <locationX>334</locationX>
-        <locationY>458</locationY>
+        <name>Check_Get_Reports</name>
+        <label>Check Get Reports</label>
+        <locationX>710</locationX>
+        <locationY>566</locationY>
         <defaultConnector>
-            <targetReference>Reports_Not_Found_Screen</targetReference>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
         </defaultConnector>
         <defaultConnectorLabel>Reports Not Found</defaultConnectorLabel>
         <rules>
-            <name>Got_Multiple_Reports</name>
+            <name>Got_Reports</name>
             <conditionLogic>and</conditionLogic>
             <conditions>
-                <leftValueReference>numReportsFound</leftValueReference>
-                <operator>GreaterThan</operator>
+                <leftValueReference>Get_Reports</leftValueReference>
+                <operator>IsEmpty</operator>
                 <rightValue>
-                    <numberValue>1.0</numberValue>
+                    <booleanValue>false</booleanValue>
                 </rightValue>
             </conditions>
             <connector>
-                <targetReference>Multiple_Reports_Found_Screen</targetReference>
+                <targetReference>Input_Screen</targetReference>
             </connector>
-            <label>Got Multiple Reports</label>
+            <label>Got Reports</label>
         </rules>
+    </decisions>
+    <decisions>
+        <name>Check_Number_of_Campaign_Members</name>
+        <label>Check Number of Campaign Members</label>
+        <locationX>314</locationX>
+        <locationY>1214</locationY>
+        <defaultConnector>
+            <targetReference>Campaign_Members_Not_Found_Screen</targetReference>
+        </defaultConnector>
+        <defaultConnectorLabel>Campaign Members Not Found</defaultConnectorLabel>
         <rules>
-            <name>Got_One_Report</name>
+            <name>Has_Campaign_Members</name>
             <conditionLogic>and</conditionLogic>
             <conditions>
-                <leftValueReference>numReportsFound</leftValueReference>
-                <operator>EqualTo</operator>
+                <leftValueReference>numCampaignMembers</leftValueReference>
+                <operator>GreaterThanOrEqualTo</operator>
                 <rightValue>
                     <numberValue>1.0</numberValue>
                 </rightValue>
             </conditions>
             <connector>
-                <targetReference>Loop_through_Single_Result</targetReference>
+                <targetReference>Confirm_Before_Insert_Screen</targetReference>
             </connector>
-            <label>Got One Report</label>
+            <label>Has Campaign Members</label>
         </rules>
     </decisions>
     <description>Select a report with Contact ID and Mobile Phone columns to create campaign members with unique mobile numbers</description>
+    <dynamicChoiceSets>
+        <name>collChoiceContactFields</name>
+        <collectionReference>Filter_Fields</collectionReference>
+        <dataType>String</dataType>
+        <displayField>labelAndName</displayField>
+        <object xsi:nil="true"/>
+        <valueField>name</valueField>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>collChoiceReportColumns</name>
+        <collectionReference>Get_Report_Columns.reportColumnOptions</collectionReference>
+        <dataType>String</dataType>
+        <displayField>labelAndDataType</displayField>
+        <object xsi:nil="true"/>
+        <valueField>name</valueField>
+    </dynamicChoiceSets>
+    <dynamicChoiceSets>
+        <name>collChoiceReports</name>
+        <collectionReference>Get_Reports</collectionReference>
+        <dataType>String</dataType>
+        <displayField>Name</displayField>
+        <object>Report</object>
+        <valueField>Id</valueField>
+    </dynamicChoiceSets>
     <dynamicChoiceSets>
         <name>recChoiceCampaigns</name>
         <dataType>String</dataType>
@@ -160,20 +245,6 @@
     <environments>Default</environments>
     <interviewLabel>Add Deduped Contacts to Campaign {!$Flow.CurrentDateTime}</interviewLabel>
     <label>Campaign AddDedupedContacts</label>
-    <loops>
-        <name>Loop_through_Single_Result</name>
-        <label>Loop through Single Result</label>
-        <locationX>402</locationX>
-        <locationY>566</locationY>
-        <collectionReference>Get_Report</collectionReference>
-        <iterationOrder>Asc</iterationOrder>
-        <nextValueConnector>
-            <targetReference>Set_Report_Id_to_Single_Result</targetReference>
-        </nextValueConnector>
-        <noMoreValuesConnector>
-            <targetReference>Add_Contacts_to_Campaign</targetReference>
-        </noMoreValuesConnector>
-    </loops>
     <processMetadataValues>
         <name>BuilderType</name>
         <value>
@@ -193,41 +264,275 @@
         </value>
     </processMetadataValues>
     <processType>Flow</processType>
+    <recordCreates>
+        <name>Insert_Campaign_Members</name>
+        <label>Insert Campaign Members</label>
+        <locationX>50</locationX>
+        <locationY>1430</locationY>
+        <connector>
+            <targetReference>Thank_You_Screen</targetReference>
+        </connector>
+        <faultConnector>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
+        <inputReference>campaignMembers</inputReference>
+    </recordCreates>
     <recordLookups>
-        <name>Get_Report</name>
-        <label>Get Report</label>
-        <locationX>334</locationX>
-        <locationY>242</locationY>
+        <name>Get_Reports</name>
+        <label>Get Reports</label>
+        <locationX>710</locationX>
+        <locationY>458</locationY>
         <assignNullValuesIfNoRecordsFound>false</assignNullValuesIfNoRecordsFound>
         <connector>
-            <targetReference>Set_Report_Count</targetReference>
+            <targetReference>Check_Get_Reports</targetReference>
         </connector>
-        <filterLogic>and</filterLogic>
-        <filters>
-            <field>Name</field>
-            <operator>EqualTo</operator>
-            <value>
-                <elementReference>Input_ReportName</elementReference>
-            </value>
-        </filters>
+        <faultConnector>
+            <isGoTo>true</isGoTo>
+            <targetReference>Error_Screen</targetReference>
+        </faultConnector>
         <getFirstRecordOnly>false</getFirstRecordOnly>
         <object>Report</object>
-        <sortField>CreatedDate</sortField>
+        <sortField>LastModifiedDate</sortField>
         <sortOrder>Desc</sortOrder>
         <storeOutputAutomatically>true</storeOutputAutomatically>
     </recordLookups>
     <screens>
+        <name>Campaign_Members_Not_Found_Screen</name>
+        <label>Campaign Members Not Found Screen</label>
+        <locationX>578</locationX>
+        <locationY>1322</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <fields>
+            <name>Campaign_Members_Not_Found_Screen_Message</name>
+            <fieldText>&lt;p&gt;No unique contacts were found.&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Column_Mapping_Screen</name>
+        <label>Column Mapping Screen</label>
+        <locationX>314</locationX>
+        <locationY>890</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Add_Contacts_to_Campaign</targetReference>
+        </connector>
+        <fields>
+            <name>Column_Mapping_Screen_Message</name>
+            <fieldText>&lt;p&gt;&lt;span style=&quot;font-size: 12px;&quot;&gt;Map report columns to contact fields.&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Record_ID_Section_Header</name>
+            <fieldText>Record ID</fieldText>
+            <fieldType>RegionContainer</fieldType>
+            <fields>
+                <name>Record_ID_Section_Header_Column1</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Contact_ID_Report_Column</name>
+                    <choiceReferences>collChoiceReportColumns</choiceReferences>
+                    <dataType>String</dataType>
+                    <fieldText>Contact ID Report Column</fieldText>
+                    <fieldType>DropdownBox</fieldType>
+                    <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                    <isRequired>true</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>5</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Record_ID_Section_Header_Column2</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>2</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Record_ID_Section_Header_Column3</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Contact_ID_Field</name>
+                    <dataType>String</dataType>
+                    <defaultValue>
+                        <stringValue>Id</stringValue>
+                    </defaultValue>
+                    <fieldText>Contact ID Field</fieldText>
+                    <fieldType>InputField</fieldType>
+                    <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                    <isReadOnly>
+                        <booleanValue>true</booleanValue>
+                    </isReadOnly>
+                    <isRequired>false</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>5</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <isRequired>false</isRequired>
+            <regionContainerType>SectionWithHeader</regionContainerType>
+        </fields>
+        <fields>
+            <name>Phone_Number_Section_Header</name>
+            <fieldText>Phone Number</fieldText>
+            <fieldType>RegionContainer</fieldType>
+            <fields>
+                <name>Phone_Number_Section_Header_Column1</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Phone_Number_Report_Column</name>
+                    <choiceReferences>collChoiceReportColumns</choiceReferences>
+                    <dataType>String</dataType>
+                    <fieldText>Phone Number Report Column</fieldText>
+                    <fieldType>DropdownBox</fieldType>
+                    <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                    <isRequired>true</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>5</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Phone_Number_Section_Header_Column2</name>
+                <fieldType>Region</fieldType>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>2</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <fields>
+                <name>Phone_Number_Section_Header_Column3</name>
+                <fieldType>Region</fieldType>
+                <fields>
+                    <name>Contact_Phone_Field</name>
+                    <choiceReferences>collChoiceContactFields</choiceReferences>
+                    <dataType>String</dataType>
+                    <fieldText>Contact Phone Field</fieldText>
+                    <fieldType>DropdownBox</fieldType>
+                    <helpText>&lt;p&gt;&lt;span style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;For any existing campaign members, this field will be used to check for duplicates against the phone numbers in the second column of the report.&lt;/span&gt;&lt;/p&gt;</helpText>
+                    <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
+                    <isRequired>true</isRequired>
+                </fields>
+                <inputParameters>
+                    <name>width</name>
+                    <value>
+                        <stringValue>5</stringValue>
+                    </value>
+                </inputParameters>
+                <isRequired>false</isRequired>
+            </fields>
+            <isRequired>false</isRequired>
+            <regionContainerType>SectionWithHeader</regionContainerType>
+        </fields>
+        <nextOrFinishButtonLabel>Find Unique Contacts</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
+        <name>Confirm_Before_Insert_Screen</name>
+        <label>Confirm Before Insert Screen</label>
+        <locationX>50</locationX>
+        <locationY>1322</locationY>
+        <allowBack>true</allowBack>
+        <allowFinish>true</allowFinish>
+        <allowPause>false</allowPause>
+        <connector>
+            <targetReference>Insert_Campaign_Members</targetReference>
+        </connector>
+        <fields>
+            <name>Confirm_Before_Insert_Message_One</name>
+            <fieldText>&lt;p&gt;&lt;span style=&quot;color: rgb(68, 68, 68); background-color: rgb(255, 255, 255);&quot;&gt;{!numCampaignMembers} unique contact was found. Are you sure you would like to add them to the {!recordId.Name} campaign?&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembers</leftValueReference>
+                    <operator>EqualTo</operator>
+                    <rightValue>
+                        <numberValue>1.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
+        <fields>
+            <name>Confirm_Before_Insert_Message_Multiple</name>
+            <fieldText>&lt;p&gt;{!numCampaignMembers} unique contacts were found. Are you sure you would like to add them to the {!recordId.Name} campaign?&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>numCampaignMembers</leftValueReference>
+                    <operator>GreaterThan</operator>
+                    <rightValue>
+                        <numberValue>1.0</numberValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
+        </fields>
+        <nextOrFinishButtonLabel>Add Campaign Members</nextOrFinishButtonLabel>
+        <showFooter>true</showFooter>
+        <showHeader>false</showHeader>
+    </screens>
+    <screens>
         <name>Error_Screen</name>
         <label>Error Screen</label>
-        <locationX>882</locationX>
-        <locationY>1058</locationY>
+        <locationX>314</locationX>
+        <locationY>1538</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <fields>
             <name>Error_Screen_Message</name>
-            <fieldText>&lt;p&gt;Hmm... something went wrong. Please pass the error message along to your system administrator.&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;Error: &lt;span style=&quot;color: rgb(186, 0, 0);&quot;&gt;{!$Flow.FaultMessage}&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;Hmm... something went wrong. Please pass the error message along to your system administrator.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
+        </fields>
+        <fields>
+            <name>Fault_Message_Display</name>
+            <fieldText>&lt;p&gt;&lt;span style=&quot;background-color: rgb(255, 255, 255); color: rgb(68, 68, 68);&quot;&gt;Error: &lt;/span&gt;&lt;span style=&quot;background-color: rgb(255, 255, 255); color: rgb(186, 0, 0);&quot;&gt;{!$Flow.FaultMessage}&lt;/span&gt;&lt;/p&gt;</fieldText>
+            <fieldType>DisplayText</fieldType>
+            <visibilityRule>
+                <conditionLogic>and</conditionLogic>
+                <conditions>
+                    <leftValueReference>$Flow.FaultMessage</leftValueReference>
+                    <operator>IsNull</operator>
+                    <rightValue>
+                        <booleanValue>false</booleanValue>
+                    </rightValue>
+                </conditions>
+                <conditions>
+                    <leftValueReference>$Flow.FaultMessage</leftValueReference>
+                    <operator>NotEqualTo</operator>
+                    <rightValue>
+                        <stringValue></stringValue>
+                    </rightValue>
+                </conditions>
+            </visibilityRule>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
@@ -235,13 +540,13 @@
     <screens>
         <name>Input_Screen</name>
         <label>Input Screen</label>
-        <locationX>334</locationX>
-        <locationY>134</locationY>
+        <locationX>314</locationX>
+        <locationY>674</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <connector>
-            <targetReference>Get_Report</targetReference>
+            <targetReference>Get_Report_Columns</targetReference>
         </connector>
         <fields>
             <name>Input_Screen_Message</name>
@@ -249,104 +554,20 @@
             <fieldType>DisplayText</fieldType>
         </fields>
         <fields>
-            <name>Input_ReportName</name>
-            <dataType>String</dataType>
-            <fieldText>Report Name</fieldText>
-            <fieldType>InputField</fieldType>
-            <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
-            <isRequired>true</isRequired>
-        </fields>
-        <nextOrFinishButtonLabel>Add Campaign Members</nextOrFinishButtonLabel>
-        <showFooter>true</showFooter>
-        <showHeader>false</showHeader>
-    </screens>
-    <screens>
-        <name>Multiple_Reports_Found_Screen</name>
-        <label>Multiple Reports Found Screen</label>
-        <locationX>50</locationX>
-        <locationY>566</locationY>
-        <allowBack>true</allowBack>
-        <allowFinish>true</allowFinish>
-        <allowPause>false</allowPause>
-        <connector>
-            <targetReference>Set_Report_Id</targetReference>
-        </connector>
-        <fields>
-            <name>Reports_Datatable</name>
-            <dataTypeMappings>
-                <typeName>T</typeName>
-                <typeValue>Report</typeValue>
-            </dataTypeMappings>
-            <extensionName>flowruntime:datatable</extensionName>
-            <fieldType>ComponentInstance</fieldType>
+            <name>Select_a_Report</name>
+            <choiceReferences>collChoiceReports</choiceReferences>
+            <extensionName>flowruntime:choiceLookup</extensionName>
+            <fieldText>Select a Report</fieldText>
+            <fieldType>ComponentChoice</fieldType>
             <inputParameters>
-                <name>label</name>
+                <name>placeholder</name>
                 <value>
-                    <stringValue>Select a report</stringValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>selectionMode</name>
-                <value>
-                    <stringValue>SINGLE_SELECT</stringValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>minRowSelection</name>
-                <value>
-                    <numberValue>1.0</numberValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>shouldDisplayLabel</name>
-                <value>
-                    <booleanValue>true</booleanValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>tableData</name>
-                <value>
-                    <elementReference>Get_Report</elementReference>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>isShowSearchBar</name>
-                <value>
-                    <booleanValue>true</booleanValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>maxRowSelection</name>
-                <value>
-                    <numberValue>1.0</numberValue>
-                </value>
-            </inputParameters>
-            <inputParameters>
-                <name>columns</name>
-                <value>
-                    <stringValue>[{&quot;apiName&quot;:&quot;Name&quot;,&quot;guid&quot;:&quot;column-744f&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:0,&quot;label&quot;:&quot;Report Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;DeveloperName&quot;,&quot;guid&quot;:&quot;column-74c9&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:1,&quot;label&quot;:&quot;Report Unique Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;FolderName&quot;,&quot;guid&quot;:&quot;column-92dc&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:2,&quot;label&quot;:&quot;Folder Name&quot;,&quot;type&quot;:&quot;text&quot;},{&quot;apiName&quot;:&quot;CreatedDate&quot;,&quot;guid&quot;:&quot;column-9937&quot;,&quot;editable&quot;:false,&quot;hasCustomHeaderLabel&quot;:false,&quot;customHeaderLabel&quot;:&quot;&quot;,&quot;wrapText&quot;:true,&quot;order&quot;:3,&quot;label&quot;:&quot;Created Date&quot;,&quot;type&quot;:&quot;customDateTime&quot;}]</stringValue>
+                    <stringValue>Search by Report Name</stringValue>
                 </value>
             </inputParameters>
             <inputsOnNextNavToAssocScrn>UseStoredValues</inputsOnNextNavToAssocScrn>
             <isRequired>true</isRequired>
             <storeOutputAutomatically>true</storeOutputAutomatically>
-        </fields>
-        <nextOrFinishButtonLabel>Add Campaign Members</nextOrFinishButtonLabel>
-        <showFooter>true</showFooter>
-        <showHeader>false</showHeader>
-    </screens>
-    <screens>
-        <name>Reports_Not_Found_Screen</name>
-        <label>Reports Not Found Screen</label>
-        <locationX>618</locationX>
-        <locationY>566</locationY>
-        <allowBack>true</allowBack>
-        <allowFinish>true</allowFinish>
-        <allowPause>false</allowPause>
-        <fields>
-            <name>Reports_Not_Found_Screen_Message</name>
-            <fieldText>&lt;p&gt;Hmm... something went wrong.&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;No reports were found with the name {!Input_ReportName}. Please confirm the report name and access to the report.&lt;/p&gt;</fieldText>
-            <fieldType>DisplayText</fieldType>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
@@ -354,54 +575,34 @@
     <screens>
         <name>Thank_You_Screen</name>
         <label>Thank You Screen</label>
-        <locationX>334</locationX>
-        <locationY>1166</locationY>
+        <locationX>50</locationX>
+        <locationY>1538</locationY>
         <allowBack>true</allowBack>
         <allowFinish>true</allowFinish>
         <allowPause>false</allowPause>
         <fields>
             <name>Thank_You_Screen_Message</name>
-            <fieldText>&lt;p&gt;Success! {!numCampaignMembersAdded} Campaign Members have been added.&lt;/p&gt;</fieldText>
+            <fieldText>&lt;p&gt;Success! {!numCampaignMembers} Campaign Members have been added.&lt;/p&gt;</fieldText>
             <fieldType>DisplayText</fieldType>
-            <visibilityRule>
-                <conditionLogic>and</conditionLogic>
-                <conditions>
-                    <leftValueReference>numCampaignMembersAdded</leftValueReference>
-                    <operator>GreaterThan</operator>
-                    <rightValue>
-                        <numberValue>0.0</numberValue>
-                    </rightValue>
-                </conditions>
-            </visibilityRule>
-        </fields>
-        <fields>
-            <name>Thank_You_Screen_Message_No_Results</name>
-            <fieldText>&lt;p&gt;There were no additional unique phone numbers to add to the campaign.&lt;/p&gt;</fieldText>
-            <fieldType>DisplayText</fieldType>
-            <visibilityRule>
-                <conditionLogic>and</conditionLogic>
-                <conditions>
-                    <leftValueReference>numCampaignMembersAdded</leftValueReference>
-                    <operator>EqualTo</operator>
-                    <rightValue>
-                        <numberValue>0.0</numberValue>
-                    </rightValue>
-                </conditions>
-            </visibilityRule>
         </fields>
         <showFooter>true</showFooter>
         <showHeader>false</showHeader>
     </screens>
     <start>
-        <locationX>208</locationX>
+        <locationX>584</locationX>
         <locationY>0</locationY>
         <connector>
-            <targetReference>Input_Screen</targetReference>
+            <targetReference>Get_Contact_Fields</targetReference>
         </connector>
     </start>
-    <status>Active</status>
+    <status>Draft</status>
+    <textTemplates>
+        <name>arrow</name>
+        <isViewedAsPlainText>false</isViewedAsPlainText>
+        <text>&lt;p&gt;&lt;span style=&quot;font-size: 20px;&quot;&gt;➡️&lt;/span&gt;&lt;span style=&quot;font-size: 14px;&quot;&gt;&lt;span class=&quot;ql-cursor&quot;&gt;﻿&lt;/span&gt;&lt;/span&gt;&lt;/p&gt;</text>
+    </textTemplates>
     <variables>
-        <name>campaignMembersCreated</name>
+        <name>campaignMembers</name>
         <dataType>SObject</dataType>
         <isCollection>true</isCollection>
         <isInput>false</isInput>
@@ -409,18 +610,15 @@
         <objectType>CampaignMember</objectType>
     </variables>
     <variables>
-        <name>numCampaignMembersAdded</name>
-        <dataType>Number</dataType>
+        <name>currentItem_Filter_Fields</name>
+        <apexClass>SObjectFieldOption</apexClass>
+        <dataType>Apex</dataType>
         <isCollection>false</isCollection>
         <isInput>false</isInput>
         <isOutput>false</isOutput>
-        <scale>0</scale>
-        <value>
-            <numberValue>0.0</numberValue>
-        </value>
     </variables>
     <variables>
-        <name>numReportsFound</name>
+        <name>numCampaignMembers</name>
         <dataType>Number</dataType>
         <isCollection>false</isCollection>
         <isInput>false</isInput>
@@ -437,12 +635,5 @@
         <isInput>true</isInput>
         <isOutput>false</isOutput>
         <objectType>Campaign</objectType>
-    </variables>
-    <variables>
-        <name>reportId</name>
-        <dataType>String</dataType>
-        <isCollection>false</isCollection>
-        <isInput>false</isInput>
-        <isOutput>false</isOutput>
     </variables>
 </Flow>

@@ -3,6 +3,8 @@
  */
 public with sharing class FlowReportToCampaignService {
 
+    public class ReportToCampaignServiceException extends Exception {}
+
     private static final String OPERATOR_NOT_EQUAL = 'notEqual';
     private static final String NON_NUMBERS = '[^0-9]';
     private static final String NUMBERS_ONLY = '\\d+';
@@ -11,14 +13,23 @@ public with sharing class FlowReportToCampaignService {
         label='Add Contacts with Unique Mobile Numbers to Campaign' 
         description='Retrieve report data, deduplicate contacts based on phone numbers, and add them to a campaign.'
     )
-    public static List<Result> addUniqueContactsToCampaign(
+    public static List<Result> findUniqueContacts(
         List<Request> requests
     ) {
         List<Result> lstResults = new List<Result>();
         try {
             for (Request request : requests) {
-                List<Contact> uniqueContacts = getUniqueContactsFromReport(request.reportId, request.campaignId);
-                List<CampaignMember> campaignMembers = addContactsToCampaign(uniqueContacts, request.campaignId);
+                List<Contact> uniqueContacts = getUniqueContactsFromReport(request);
+
+                List<CampaignMember> campaignMembers = new List<CampaignMember>();
+                for (Contact ct : uniqueContacts) {
+                    campaignMembers.add(
+                        new CampaignMember(
+                            CampaignId = request.campaignId, 
+                            ContactId = ct.Id
+                        )
+                    );
+                }
 
                 Result result = new Result();
                 result.campaignMembers = campaignMembers;
@@ -26,6 +37,7 @@ public with sharing class FlowReportToCampaignService {
             }
         } catch (Exception e) {
             System.debug('Failed to add contacts to campaign: ' + e.getMessage());
+            throw new ReportToCampaignServiceException(e.getMessage());
         }
         return lstResults;
     }
@@ -38,12 +50,19 @@ public with sharing class FlowReportToCampaignService {
      * @see https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_analytics_report_data.htm
      * @see https://glazeforce.wordpress.com/2016/03/29/workaround-to-2000-record-limits-in-report-analytics-api-salesforce/
      */
-    private static List<Contact> getUniqueContactsFromReport(
-        Id reportId, 
-        Id campaignId
-    ) {
+    private static List<Contact> getUniqueContactsFromReport(Request request) {
+        request.contactPhoneField = request.contactPhoneField ?? 'MobilePhone';
+
         Map<String, Contact> uniqueContactsMap = new Map<String, Contact>();
-        Set<String> setExistingCampaignNumbers = getExistingCampaignNumbers(campaignId);
+        List<Set<String>> existingCampaignMemberKeys = getExistingCampaignMemberInfo(
+            request.campaignId, 
+            request.contactPhoneField
+        );
+        Set<String> existingContactIds = existingCampaignMemberKeys[0];
+        Set<String> existingPhoneNumbers = existingCampaignMemberKeys[1];
+
+        Reports.ReportResults results = Reports.ReportManager.runReport(request.reportId);
+        List<String> detailColumns = results.getReportMetadata().getDetailColumns();
 
         // Track batch sizes for pagination
         Integer lastBatchSize;
@@ -51,21 +70,26 @@ public with sharing class FlowReportToCampaignService {
         String retrievedContactIdCsv = '';
 
         do {
-            reportResults = runReport(reportId, reportResults, retrievedContactIdCsv);
+            reportResults = runReport(request.reportId, reportResults, retrievedContactIdCsv);
             Reports.ReportFactWithDetails factWithDetails = (Reports.ReportFactWithDetails) reportResults.getFactMap().get('T!T');
 
             Set<Id> contactIds = new Set<Id>();
             for (Reports.ReportDetailRow row : factWithDetails.getRows()) {
-                Id contactId = (Id) row.getDataCells()[0].getLabel();
-                contactIds.add(contactId);
+                Integer contactIdIndex = detailColumns.indexOf(request.contactIdColumn);
+                Integer phoneNumberIndex = detailColumns.indexOf(request.phoneNumberColumn);
 
-                // Guard against blank mobile numbers and those already included for existing campaign members
-                String mobilePhone = (String) row.getDataCells()[1].getLabel();
-                if (String.isBlank(mobilePhone) || mobilePhone == '-') {
-                    continue;
-                }
+                Id contactId = (Id) row.getDataCells()[contactIdIndex].getLabel();
+                contactIds.add(contactId);
+                String mobilePhone = (String) row.getDataCells()[phoneNumberIndex].getLabel();
                 String standardizedPhone = standardizePhoneNumber(mobilePhone);
-                if (setExistingCampaignNumbers.contains(standardizedPhone)) {
+
+                // Guard against existing members and blank mobile numbers
+                if (
+                    existingContactIds.contains(contactId) ||
+                    existingPhoneNumbers.contains(standardizedPhone) ||
+                    String.isBlank(mobilePhone) || 
+                    mobilePhone == '-'
+                ) {
                     continue;
                 }
     
@@ -134,8 +158,8 @@ public with sharing class FlowReportToCampaignService {
 
     /**
      * Append a newly added filter to filter logic
-     *      1 OR 2 => (1 OR 2) AND 3
-     *      1 AND (2 OR 3) => (1 AND (2 OR 3)) AND 4
+     *   1 OR 2 => (1 OR 2) AND 3
+     *   1 AND (2 OR 3) => (1 AND (2 OR 3)) AND 4
      * @param originalFilter Previous filter logic
      * @return String Updated filter logic
      */
@@ -157,47 +181,35 @@ public with sharing class FlowReportToCampaignService {
     }
 
     /**
-     * Add contacts to a campaign
-     * @param contacts List of contacts to add to the campaign
-     * @param campaignId Id of campaign to add the contacts to
-     * @return List<CampaignMember> Committed campaign member records
-     */
-    private static List<CampaignMember> addContactsToCampaign(
-        List<Contact> contacts, 
-        Id campaignId
-    ) {
-        List<CampaignMember> campaignMembers = new List<CampaignMember>();
-        // Ensure we don't go over dml limit for transaction
-        Integer maxContactsToAdd = contacts.size() <= 10000 ? contacts.size() : 10000;
-        for (Integer i = 0; i < maxContactsToAdd; i++) {
-            campaignMembers.add(
-                new CampaignMember(
-                    ContactId = contacts[i].Id,
-                    CampaignId = campaignId
-                )
-            );
-        }
-        Database.insert(campaignMembers, AccessLevel.USER_MODE);
-        return campaignMembers;
-    }
-
-    /**
      * Get existing campaign members to protect against duplicates with existing mobile numbers
      * @param campaignId Id of campaign
-     * @return Set<String> Mobile numbers of existing campaign members
+     * @param contactPhoneField The api name of the field on the contact to match against
+     * @return List<Set<String>> A list of sets of keys for existing campaign members
+     *  [0] Contact ids
+     *  [1] Standardized phone numbers
      */
-    private static Set<String> getExistingCampaignNumbers(
-        Id campaignId
+    private static List<Set<String>> getExistingCampaignMemberInfo(
+        Id campaignId, 
+        String contactPhoneField
     ) {
+        List<Set<String>> results = new List<Set<String>>();
+        Set<String> contactIds = new Set<String>();
+        Set<String> phoneNumbers = new Set<String>();
+
+        String pathToContactField = 'Contact.' + contactPhoneField;
+        String query = 'SELECT ContactId, ' + String.escapeSingleQuotes(pathToContactField) + 
+                       ' FROM CampaignMember WHERE CampaignId = :campaignId AND ContactId != null WITH SYSTEM_MODE';
+        List<CampaignMember> members = Database.query(query);
+
         Set<String> existingMobileNumbers = new Set<String>();
-        for (CampaignMember cm : [SELECT Contact.MobilePhone 
-                                    FROM CampaignMember 
-                                   WHERE CampaignId = :campaignId
-                                    WITH SYSTEM_MODE]
-        ) {
-            existingMobileNumbers.add(standardizePhoneNumber(cm.Contact.MobilePhone));
+        for (CampaignMember cm : members) {
+            contactIds.add(cm.ContactId);
+            String phone = (String) cm.getSobject('Contact').get(contactPhoneField);
+            phoneNumbers.add( standardizePhoneNumber(phone) );
         }
-        return existingMobileNumbers;
+        results.add(contactIds);
+        results.add(phoneNumbers);
+        return results;
     }
 
     /**
@@ -214,6 +226,12 @@ public with sharing class FlowReportToCampaignService {
         public Id reportId;
         @InvocableVariable(label='Campaign Id' required=true)
         public Id campaignId;
+        @InvocableVariable(label='Contact ID Report Column' required=true)
+        public String contactIdColumn;
+        @InvocableVariable(label='Phone Number Report Column' required=true)
+        public String phoneNumberColumn;
+        @InvocableVariable(label='Contact Phone Field for Matching')
+        public String contactPhoneField;
     }
 
     public class Result {

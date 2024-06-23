@@ -36,6 +36,7 @@ public class FlowReportToCampaignService_Test {
         FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
         request.reportId = reportId;
         request.campaignId = campaign.Id;
+        request.contactPhoneField = 'MobilePhone';
 
         List<FlowReportToCampaignService.Request> requests = new List<FlowReportToCampaignService.Request>{request};
 
@@ -135,6 +136,28 @@ public class FlowReportToCampaignService_Test {
         Assert.isFalse(results.isEmpty(), 'Results should not be empty');
         FlowReportToCampaignService.Result result = results[0];
         Assert.areEqual(4001, result.campaignMembers.size(), 'There should be 4001 unique campaign members');
+    }
+
+    @IsTest
+    static void testRequestWithException() {
+        String invalidField = 'Invalid_Field';
+
+        FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
+        request.reportId = getReportId(REPORT_DEVELOPER_NAME);
+        request.campaignId = createCampaign().Id;
+        request.contactPhoneField = invalidField;
+
+        List<FlowReportToCampaignService.Result> results;
+        Test.startTest();
+        try {
+            results = FlowReportToCampaignService.addUniqueContactsToCampaign(
+                new List<FlowReportToCampaignService.Request>{ request }
+            );
+            Assert.fail('Should not have received results with the invalid field name');
+        } catch (Exception e) {
+            Assert.isTrue(e.getMessage().contains('No such column'), 'Should throw an exception for the invalid contact field');
+            Assert.areEqual('FlowReportToCampaignService.ReportToCampaignServiceException', e.getTypeName(), 'Should have received the service custom exception');
+        }
     }
 
     private static Id getReportId(String reportDeveloperName) {
