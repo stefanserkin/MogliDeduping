@@ -13,7 +13,7 @@ public with sharing class FlowReportToCampaignService {
         label='Add Contacts with Unique Mobile Numbers to Campaign' 
         description='Retrieve report data, deduplicate contacts based on phone numbers, and add them to a campaign.'
     )
-    public static List<Result> findUniqueContacts(
+    public static List<Result> getUniqueCampaignMembers(
         List<Request> requests
     ) {
         List<Result> lstResults = new List<Result>();

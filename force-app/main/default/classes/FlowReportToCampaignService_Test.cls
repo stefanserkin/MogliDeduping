@@ -3,6 +3,8 @@ public class FlowReportToCampaignService_Test {
     
     private static final String REPORT_DEVELOPER_NAME = 'Mogli_Deduplication_Test_Report_yOe';
     private static final String FILTERED_TITLE = 'Tester Person';
+    private static final String CONTACT_ID_COLUMN_NAME = 'CONTACT_ID';
+    private static final String PHONE_NUMBER_COLUMN_NAME = 'PHONE3';
 
     private static Campaign createCampaign() {
         Campaign campaign = new Campaign(
@@ -27,7 +29,7 @@ public class FlowReportToCampaignService_Test {
     }
 
     @IsTest(SeeAllData='true')
-    static void testAddUniqueContactsToCampaign() {
+    static void testGetUniqueCampaignMembers() {
         Campaign campaign = createCampaign();
         createSampleContacts();
 
@@ -37,11 +39,13 @@ public class FlowReportToCampaignService_Test {
         request.reportId = reportId;
         request.campaignId = campaign.Id;
         request.contactPhoneField = 'MobilePhone';
+        request.contactIdColumn = CONTACT_ID_COLUMN_NAME;
+        request.phoneNumberColumn = PHONE_NUMBER_COLUMN_NAME;
 
         List<FlowReportToCampaignService.Request> requests = new List<FlowReportToCampaignService.Request>{request};
 
         Test.startTest();
-        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.addUniqueContactsToCampaign(requests);
+        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.getUniqueCampaignMembers(requests);
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Results should not be empty');
@@ -68,11 +72,13 @@ public class FlowReportToCampaignService_Test {
         FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
         request.reportId = reportId;
         request.campaignId = campaign.Id;
+        request.contactIdColumn = CONTACT_ID_COLUMN_NAME;
+        request.phoneNumberColumn = PHONE_NUMBER_COLUMN_NAME;
 
         List<FlowReportToCampaignService.Request> requests = new List<FlowReportToCampaignService.Request>{request};
 
         Test.startTest();
-        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.addUniqueContactsToCampaign(requests);
+        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.getUniqueCampaignMembers(requests);
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Results should not be empty');
@@ -126,11 +132,13 @@ public class FlowReportToCampaignService_Test {
         FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
         request.reportId = reportId;
         request.campaignId = campaign.Id;
+        request.contactIdColumn = CONTACT_ID_COLUMN_NAME;
+        request.phoneNumberColumn = PHONE_NUMBER_COLUMN_NAME;
 
         List<FlowReportToCampaignService.Request> requests = new List<FlowReportToCampaignService.Request>{request};
 
         Test.startTest();
-        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.addUniqueContactsToCampaign(requests);
+        List<FlowReportToCampaignService.Result> results = FlowReportToCampaignService.getUniqueCampaignMembers(requests);
         Test.stopTest();
 
         Assert.isFalse(results.isEmpty(), 'Results should not be empty');
@@ -145,12 +153,14 @@ public class FlowReportToCampaignService_Test {
         FlowReportToCampaignService.Request request = new FlowReportToCampaignService.Request();
         request.reportId = getReportId(REPORT_DEVELOPER_NAME);
         request.campaignId = createCampaign().Id;
+        request.contactIdColumn = CONTACT_ID_COLUMN_NAME;
+        request.phoneNumberColumn = PHONE_NUMBER_COLUMN_NAME;
         request.contactPhoneField = invalidField;
 
         List<FlowReportToCampaignService.Result> results;
         Test.startTest();
         try {
-            results = FlowReportToCampaignService.addUniqueContactsToCampaign(
+            results = FlowReportToCampaignService.getUniqueCampaignMembers(
                 new List<FlowReportToCampaignService.Request>{ request }
             );
             Assert.fail('Should not have received results with the invalid field name');
