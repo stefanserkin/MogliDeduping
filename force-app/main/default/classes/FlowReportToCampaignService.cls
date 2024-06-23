@@ -215,8 +215,12 @@ public with sharing class FlowReportToCampaignService {
      * @param phone Phone number to standardize
      * @return String Standardized phone number
      */
-    private static String standardizePhoneNumber(String phone) {
-        return phone != null ? phone.replaceAll(NON_NUMBERS, '') : null;
+    public static String standardizePhoneNumber(String phone) {
+        String standardizedPhone = phone != null ? phone.replaceAll(NON_NUMBERS, '') : null;
+        if (standardizedPhone.length() == 11) {
+            standardizedPhone = standardizedPhone.right(10);
+        }
+        return standardizedPhone;
     }
 
     public class Request {

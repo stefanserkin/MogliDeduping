@@ -177,6 +177,22 @@ public class FlowReportToCampaignService_Test {
         }
     }
 
+    @IsTest
+    static void testStandardizePhoneNumber() {
+        String phone1 = '(212) 212-1234';
+        String phone2 = '1-212-212-1234';
+        String phone3 = '+12122121234';
+
+        Test.startTest();
+        String standardizedPhone1 = FlowReportToCampaignService.standardizePhoneNumber(phone1);
+        String standardizedPhone2 = FlowReportToCampaignService.standardizePhoneNumber(phone2);
+        String standardizedPhone3 = FlowReportToCampaignService.standardizePhoneNumber(phone3);
+        Test.stopTest();
+
+        Assert.areEqual(standardizedPhone1, standardizedPhone2, 'Standardized phone numbers should be equal');
+        Assert.areEqual(standardizedPhone1, standardizedPhone3, 'Standardized phone numbers should be equal');
+    }
+
     private static Id getReportId(String reportDeveloperName) {
         List<Report> reportList = [SELECT Id FROM Report WHERE DeveloperName = :reportDeveloperName LIMIT 1];
         if (reportList.isEmpty()) {
